@@ -19,6 +19,8 @@ export default function Home() {
       <div style={{ textAlign: "center" }}>
         <h2>Spotify now playing widget</h2>
         <br />
+        <p><Link href="/login">Connect Spotify and get a refresh token</Link></p>
+        <br />
         <p>
           Navigate to <Link href="/api/now-playing">/api/now-playing</Link>
         </p>

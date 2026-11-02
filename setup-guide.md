@@ -1,73 +1,32 @@
-# Setup Guide
+# Spotify setup
 
-Guide by [JoshLmao](https://github.com/JoshLmao)
+1. Create an app in the [Spotify developer dashboard](https://developer.spotify.com/dashboard/).
+2. Add `http://127.0.0.1:3000/callback` to its Redirect URIs. Spotify no longer permits `localhost` redirect URIs.
+3. Copy `.env.local.example` to `.env.local` and set `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` from your dashboard. Leave `SPOTIFY_REFRESH_TOKEN` empty for now.
+4. Run `npm install` and `npm run dev`.
+5. Open [http://127.0.0.1:3000/login](http://127.0.0.1:3000/login) and approve playback access. The app validates the authorization state and exchanges the code server-side.
+6. On the callback page, copy the displayed `SPOTIFY_REFRESH_TOKEN=...` line into `.env.local`. Keep the token and client secret private.
+7. Restart the server and open [your widget](http://127.0.0.1:3000/api/now-playing).
 
-### Part 1: Vercel & Deploy
+**`http://localhost:3000` will not work for Spotify login. Always open the app at [http://127.0.0.1:3000](http://127.0.0.1:3000), even if the development server prints a localhost URL.** The login and callback must use the same host for authorization state validation.
 
-Setup with a click of a button 😉
+You do not need to construct authorization URLs, encode credentials, or run curl commands.
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/manjillama/spotify-now-playing-widget)
+## Different ports or hosted setup
 
-1. Sign up or Sign in to use [Vercel](https://vercel.com/) for hosting the repo. You could use another service like [Heroku](https://heroku.com/) but this guide will use Vercel
-2. Fork [spotify-now-playing-widget
-   ](https://github.com/manjillama/spotify-now-playing-widget) which is just a skeleton repo that contains the Spotify Now Playing specific features
-3. Go to your Vercel dashboard and select Import Project
-4. Paste the Git url of your forked repo. For example "https://github.com/manjillama/spotify-now-playing-widget"
-5. Leave the remaining settings for now and click 'Deploy'
+Set `SPOTIFY_REDIRECT_URI` to the exact callback URI registered in your dashboard. It defaults to `http://127.0.0.1:3000/callback`. Open `/login` on that same host, using the same scheme. State cookies expire after ten minutes; if setup fails or you reload a completed callback, start again at `/login`.
 
-### Part 2: Configure Environment Vars
+Spotify requires HTTPS for hosted redirects and permits HTTP for explicit loopback IP addresses. See [Spotify redirect requirements](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri) and the [authorization code flow](https://developer.spotify.com/documentation/web-api/tutorials/code-flow).
 
-1. Navigate to [Spotify Dashboard](https://developer.spotify.com/dashboard/) and create a new app.
-   <img src="https://i.imgur.com/msl76HF.png" height="300">
+## Deploy on Vercel
 
-2. Click, edit settings and add "https://localhost:3000/callback" to the "Redirect URIs" section
-   <img src="https://i.imgur.com/wm4IoDH.png" height="400">
+1. Import your repository into [Vercel](https://vercel.com/new).
+2. Add `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, and the generated `SPOTIFY_REFRESH_TOKEN` as environment variables.
+3. Deploy or redeploy after saving the variables.
+4. Use `https://YOUR_DEPLOYMENT/api/now-playing` as your widget image URL:
 
-3. Next, we need to do a [Authoration Code flow](https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow) auth request to retrieve a Refresh Token.
+```html
+<img src="https://YOUR_DEPLOYMENT/api/now-playing" width="256" height="64" alt="Now Playing on Spotify">
+```
 
-   - Replace "MY_CLIENT_ID" in the following url with your Client ID from your Spotify Dashboard and paste the url in your browser. Your client id and secret id can be found in your dashboard, pic below
-
-   - https://accounts.spotify.com/authorize?client_id=MY_CLIENT_ID&response_type=code&redirect_uri=https%3A%2F%2Flocalhost%3A3000%2Fcallback&scope=user-read-playback-state%20user-read-currently-playing
-     <img src="https://i.imgur.com/VzY5Uxv.png" >
-
-   - Once done, you will get a blank page with a different url which is like "https://localhost:3000/callback?code=MY_CODE"
-
-   - Next, navigate to [Base64Encode](https://www.base64encode.org/) and insert your client id and secret id **separated with a colon**. For example, "CLIENT_ID:SECRET_ID"
-
-   - Then, insert your **base 64 encoded string** and **code** from the previous steps in the following command and press enter to run.
-
-     `curl -H "Authorization: Basic MY_BASE_64_STRING" -d grant_type=authorization_code -d code=MY_SPOTIFY_CODE -d redirect_uri=https%3A%2F%2Flocalhost%3A3000%2Fcallback https://accounts.spotify.com/api/token`
-
-        <img src="https://i.imgur.com/tnaCoqj.png">
-
-   - Once done correctly, you will get JSON which contains your refresh token, shown in the blue box in the image above. Take out the refresh token, blocked out in green above, and save it somewhere
-
-4. Navigate to your deployment on Vercel and click on Settings, then click on "Environment Variables"
-   <img src="https://i.imgur.com/kUEW5Tt.png" height=400 />
-
-5. Insert the following Variable names and insert your values from the previous steps
-
-   ```
-   Name: SPOTIFY_CLIENT_ID
-   Value: MY_CLIENT_ID
-
-   Name: SPOTIFY_CLIENT_SECRET
-   Value: MY_SECRET_ID
-
-   Name: SPOTIFY_REFRESH_TOKEN
-   Value: MY_REFRESH_TOKEN
-   ```
-
-6. Once done, navigate to one of your deployment url's and place "/now-playing" at the end. For example, "https://spotify-now-playing-widget.vercel.app/api/now-playing"
-
-7. Replace "MY_VERCEL_DEPLOYMENT_URL" in the following code with one of your deployment url's and insert it into any ReadMe.md
-
-   ```
-   <a href="https://MY_VERCEL_DEPLOYMENT_URL/now-playing">
-       <img src="https://MY_VERCEL_DEPLOYMENT_URL/now-playing" width="256" height="64" alt="Now Playing">`
-   </a>
-   ```
-
-That's it! Below is an example of what it should look like. If you have any problems, make sure to re-read the instructions and follow them precisely!
-
-<img src="https://i.imgur.com/uxeiC8k.png">
+The refresh token generated locally also works in your deployment with the same client credentials. You only need a hosted `SPOTIFY_REDIRECT_URI` if you want to run the login flow on the deployed app.
