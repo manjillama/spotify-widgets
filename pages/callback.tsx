@@ -8,6 +8,7 @@ type Props = { refreshToken: string | null; error: string | null };
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ req, res, query }) => {
   privateResponse(res);
+  if (process.env.NODE_ENV !== "development") return { notFound: true };
   const fail = (error: string, status = 400) => {
     res.statusCode = status;
     return { props: { refreshToken: null, error } };

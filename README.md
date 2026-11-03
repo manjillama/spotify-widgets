@@ -51,7 +51,7 @@ The widget uses light mode by default. Use `/api/widgets/now-playing?theme=dark`
 
 Register `http://127.0.0.1:3000/callback` as a redirect URI in your [Spotify app dashboard](https://developer.spotify.com/dashboard/). Set `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in `.env.local`, start the app, then visit [Connect Spotify](http://127.0.0.1:3000/login). After approving access, copy the displayed `SPOTIFY_REFRESH_TOKEN` into `.env.local` and restart the server.
 
-`SPOTIFY_REDIRECT_URI` defaults to `http://127.0.0.1:3000/callback`. If you change the port or use a hosted callback, set this variable to the exact URI registered with Spotify. Open `/login` on the same host as the callback so the authorization state cookie is available. Hosted callbacks require HTTPS.
+`SPOTIFY_REDIRECT_URI` defaults to `http://127.0.0.1:3000/callback`. If you change the local port, set this variable to the exact loopback URI registered with Spotify. Open `/login` on the same host as the callback so the authorization state cookie is available. Login and callback are disabled in production; generate tokens locally.
 
 See [setup-guide](./setup-guide.md) for deployment steps.
 
@@ -106,3 +106,9 @@ See [setup-guide](./setup-guide.md) for deployment steps.
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 The larger now-playing widget includes elapsed and total time. Times reflect the moment the image loads; the progress bar animates while playing. Paused tracks hold their position. Both sizes support `theme=light` and `theme=dark`.
+
+## Development-only authorization
+
+`/login` and `/callback` are available only under `npm run dev` (`NODE_ENV=development`). Production builds, including Vercel deployments, return 404 for both routes. Production pages do not display connect or reconnect links. Generate the refresh token locally, then save it as a private deployment environment variable and redeploy. Never run a development server as your public production deployment.
+
+Only the configured account’s listening data is public; credentials must stay in server environment variables. If a refresh token was exposed, revoke this app’s access in your Spotify account, authorize again locally, replace the deployment token, and redeploy.

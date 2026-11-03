@@ -12,11 +12,11 @@
 
 You do not need to construct authorization URLs, encode credentials, or run curl commands.
 
-## Different ports or hosted setup
+## Different local ports
 
 Set `SPOTIFY_REDIRECT_URI` to the exact callback URI registered in your dashboard. It defaults to `http://127.0.0.1:3000/callback`. Open `/login` on that same host, using the same scheme. State cookies expire after ten minutes; if setup fails or you reload a completed callback, start again at `/login`.
 
-Spotify requires HTTPS for hosted redirects and permits HTTP for explicit loopback IP addresses. See [Spotify redirect requirements](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri) and the [authorization code flow](https://developer.spotify.com/documentation/web-api/tutorials/code-flow).
+Authorization is development-only. Hosted production login and callback routes return 404. Spotify permits HTTP for explicit loopback IP addresses. See [Spotify redirect requirements](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri) and the [authorization code flow](https://developer.spotify.com/documentation/web-api/tutorials/code-flow).
 
 ## Deploy on Vercel
 
@@ -31,7 +31,7 @@ Spotify requires HTTPS for hosted redirects and permits HTTP for explicit loopba
 
 The widget defaults to light mode. For dark mode, use `https://YOUR_DEPLOYMENT/api/widgets/now-playing?theme=dark` as the image URL. You can also specify `?theme=light` explicitly.
 
-The refresh token generated locally also works in your deployment with the same client credentials. You only need a hosted `SPOTIFY_REDIRECT_URI` if you want to run the login flow on the deployed app.
+The refresh token generated locally also works in your deployment with the same client credentials. Generate tokens locally; the login flow is disabled on deployed production apps.
 
 ## Upgrading an existing token
 
@@ -46,3 +46,5 @@ Use `/api/widgets/now-playing`, `/api/widgets/recently-played`, `/api/widgets/to
 ```html
 <img src="https://YOUR_DEPLOYMENT/api/widgets/top-artists?theme=dark&amp;limit=5" width="360" alt="Top artists on Spotify" />
 ```
+
+`/login` and `/callback` are enabled only with `npm run dev`. They return 404 in production, including Next.js data requests. Do not add a hosted callback to Spotify for this app; use your local loopback callback to generate tokens.

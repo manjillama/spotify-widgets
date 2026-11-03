@@ -282,6 +282,7 @@ test("dashboard renders setup or listening panels without serializing credential
       /private-client|private-secret|private-refresh/,
     );
     assert.match(dashboard, /data-theme="dark"/);
+    if (process.env.NODE_ENV !== "development") assert.doesNotMatch(dashboard, /href="\/login"/);
     const remembered = await page.getServerSideProps({ req: { cookies: { "listening-room-theme": "light" } }, res: response() });
     assert.equal(remembered.props.initialTheme, "light");
     assert.match(renderToStaticMarkup(React.createElement(page.default, remembered.props)), /data-theme="light"/);

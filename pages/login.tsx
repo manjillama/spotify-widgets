@@ -5,6 +5,7 @@ import { getSpotifyConfig, privateResponse, stateCookie } from "../utils/spotify
 
 export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   privateResponse(res);
+  if (process.env.NODE_ENV !== "development") return { notFound: true };
   try {
     const { clientId, redirectUri } = getSpotifyConfig();
     const state = randomBytes(32).toString("hex");

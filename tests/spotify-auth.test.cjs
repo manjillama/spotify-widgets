@@ -36,6 +36,7 @@ test("authorization flow validates state and exchanges codes without exposing cr
   const savedEnv = { ...process.env };
   const savedFetch = global.fetch;
   try {
+    process.env.NODE_ENV = "development";
     process.env.SPOTIFY_CLIENT_ID = "test-client";
     process.env.SPOTIFY_CLIENT_SECRET = "test-secret";
     delete process.env.SPOTIFY_REDIRECT_URI;
@@ -150,5 +151,29 @@ test("authorization flow validates state and exchanges codes without exposing cr
   } finally {
     process.env = savedEnv;
     global.fetch = savedFetch;
+  }
+});
+
+
+test("setup routes are unavailable outside development and never exchange or return tokens", async () => {
+  const originalEnv = process.env.NODE_ENV;
+  const originalFetch = global.fetch;
+  try {
+    global.fetch = async () => { throw new Error("Token exchange must not run"); };
+    for (const environment of ["production", "test", undefined]) {
+      if (environment === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = environment;
+      for (const handler of [login, callback]) {
+        const headers = {};
+        const result = await handler({ res: { setHeader(key, value) { headers[key] = value; } } });
+        assert.deepEqual(result, { notFound: true });
+        assert.equal(headers["Cache-Control"], "private, no-store");
+        assert.equal(headers["Set-Cookie"], undefined);
+      }
+    }
+  } finally {
+    if (originalEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = originalEnv;
+    global.fetch = originalFetch;
   }
 });
