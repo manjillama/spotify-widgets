@@ -1,51 +1,29 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import Player from "../../components/player";
-import { nowPlaying } from "../../utils";
-import { renderToString } from "react-dom/server";
+import { nowPlaying, SpotifyError } from "../../utils";
+import { normalizeItem } from "../../utils/spotify-catalog";
 
-type SpotifyAPI = {
-  item: {
-    name?: string;
-    duration_ms?: number;
-    duration?: number;
-    album?: {
-      images?: { url: string }[];
-    };
-    artists?: { name: string }[];
-  };
-  is_playing: boolean;
-  progress_ms: number;
-};
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const {
-    item = {},
-    is_playing: isPlaying = false,
-    progress_ms: progress = 0,
-  }: SpotifyAPI = await nowPlaying();
-
-  const { duration_ms: duration, name: track } = item;
-  const { images = [] } = item.album || {};
-
-  const cover =
-    images[images.length - 1]?.url ||
-    `https://raw.githubusercontent.com/manjillama/spotify-now-playing-widget/main/public/assets/default-artwork.jpg`;
-
-  const buff = await (await fetch(cover)).arrayBuffer();
-  let coverImg = `data:image/jpeg;base64,${Buffer.from(buff).toString(
-    "base64"
-  )}`;
-
-  const artist = (item.artists || []).map(({ name }) => name).join(", ");
-
-  const text = renderToString(
-    Player({ cover: coverImg, artist, track, isPlaying, progress, duration })
-  );
-
-  res.setHeader("Content-Type", "image/svg+xml");
-  res.setHeader("Cache-Control", "s-maxage=1, stale-while-revalidate");
-  return res.status(200).send(text);
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+  try {
+    const data = await nowPlaying();
+    const theme = req.query.theme === "dark" ? "dark" : "light";
+    return res.status(200).json({
+      title: "Now playing",
+      item: data.item ? normalizeItem(data.item) : null,
+      isPlaying: Boolean(data.item && data.is_playing),
+      progress: data.progress_ms ?? 0,
+      duration: data.item?.duration_ms ?? null,
+      links: { widget: `/api/widgets/now-playing?theme=${theme}` },
+    });
+  } catch (error) {
+    if (error instanceof SpotifyError) {
+      if (error.retryAfter) res.setHeader("Retry-After", error.retryAfter);
+      return res.status(error.status).json({ error: error.message });
+    }
+    return res.status(502).json({ error: "Unable to load Spotify playback. Please try again." });
+  }
 }

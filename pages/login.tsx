@@ -14,7 +14,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
       client_id: clientId,
       redirect_uri: redirectUri,
       state,
-      scope: "user-read-playback-state user-read-currently-playing",
+      scope: "user-read-playback-state user-read-currently-playing user-read-recently-played user-top-read",
     });
     return { redirect: { destination: `https://accounts.spotify.com/authorize?${query}`, permanent: false } };
   } catch {

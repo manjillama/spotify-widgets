@@ -3,12 +3,51 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 **Now Playing on Spotify**
 
 <a href="https://github.com/manjillama/spotify-now-playing-widget">
-    <img src="https://spotify-playing-badge.vercel.app/api/now-playing" width="256" height="64" alt="Now Playing">
+    <img src="https://spotify-playing-badge.vercel.app/api/widgets/now-playing" width="256" height="64" alt="Now Playing">
 </a>
 
 <hr/>
 
+## Listening dashboard & APIs
+
+All `/api/<name>` routes return JSON; `/api/widgets/<name>` routes return SVG images. **Breaking change:** existing now-playing image embeds must switch from `/api/now-playing` to `/api/widgets/now-playing`. The now-playing JSON response includes `title`, `item` (or `null` when idle), `isPlaying`, `progress` in milliseconds, `duration` in milliseconds (or `null`), and `links.widget`.
+
+The homepage is a listening dashboard for the account configured in the server environment. The homepage defaults to dark mode and remembers your selection in a browser cookie for one year, including after refresh. Standalone widgets still default to light mode. All four previews use the same widget image endpoints that you can embed on your own site or README; the homepage does not render separate copies of the listening lists. It includes now playing, recent listening history, top tracks, and top artists, with light/dark mode, time-range filters, refresh, and copyable SVG embeds. Visitors see that configured account’s data; this is not a separate account session per visitor.
+
+**Existing users:** visit `/login` again to approve `user-read-recently-played` and `user-top-read`. Replace `SPOTIFY_REFRESH_TOKEN` with the new token and restart (or redeploy). Existing playback-only tokens cannot access these new APIs.
+
+| Endpoint | Data |
+| --- | --- |
+| `/api/recently-played` | Recent tracks, including play timestamps |
+| `/api/top-tracks` | Top tracks by Spotify affinity |
+| `/api/top-artists` | Top artists by Spotify affinity |
+
+All three return JSON with a `links.widget` URL and `title`, `range`, and `items` (`id`, `name`, `subtitle`, `image`, `url`, `playedAt`). Use `limit=1` through `20` (default `5`). For top items, use `range=short_term` (default, about four weeks), `medium_term` (about six months), or `long_term` (about a year). These rankings are not exact play counts. Recently played does not include podcast episodes.
+
+Each API has a dedicated image endpoint. All widgets default to light mode; append `?theme=dark` for dark mode or `?theme=light` explicitly.
+
+| API | Widget image |
+| --- | --- |
+| `/api/now-playing` | `/api/widgets/now-playing` |
+| `/api/recently-played` | `/api/widgets/recently-played` |
+| `/api/top-tracks` | `/api/widgets/top-tracks` |
+| `/api/top-artists` | `/api/widgets/top-artists` |
+
+The dashboard links to each API and widget separately and copies an embed in the selected theme. Catalog widgets are 360px wide and support the same `limit` and `range` parameters as their APIs. Now playing defaults to 256 × 64px; add `size=large` for the optional 320 × 88px version. Idle playback uses `default-artwork.jpg` in light mode and `default-artwork-dark.jpg` in dark mode.
+
+Example dark widget embed:
+
+```html
+<img src="https://YOUR_DEPLOYMENT/api/widgets/top-tracks?limit=5&amp;range=short_term&amp;theme=dark" width="360" alt="Top tracks on Spotify" />
+```
+
+`format=svg` on the original catalog APIs remains supported for existing embeds.
+
+The JSON APIs return clear errors for missing configuration, insufficient permissions, unavailable Spotify responses, invalid parameters, and rate limits. Access tokens are cached server-side until shortly before expiry; secrets are never included in dashboard props or API responses. Dashboard data refreshes on page load, when changing the top-item range, or when pressing Refresh.
+
 ## Spotify Setup
+
+The widget uses light mode by default. Use `/api/widgets/now-playing?theme=dark` for dark mode or `/api/widgets/now-playing?theme=light` for explicit light mode. Missing or unsupported theme values use light mode. The widget defaults to 256 × 64 pixels. Use `size=large` for 320 × 88 pixels.
 
 Register `http://127.0.0.1:3000/callback` as a redirect URI in your [Spotify app dashboard](https://developer.spotify.com/dashboard/). Set `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in `.env.local`, start the app, then visit [Connect Spotify](http://127.0.0.1:3000/login). After approving access, copy the displayed `SPOTIFY_REFRESH_TOKEN` into `.env.local` and restart the server.
 
@@ -65,3 +104,5 @@ See [setup-guide](./setup-guide.md) for deployment steps.
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+The larger now-playing widget includes elapsed and total time. Times reflect the moment the image loads; the progress bar animates while playing. Paused tracks hold their position. Both sizes support `theme=light` and `theme=dark`.

@@ -59,7 +59,7 @@ export default function Callback({ refreshToken, error }: Props) {
         <textarea aria-label="Spotify refresh token environment variable" readOnly value={`SPOTIFY_REFRESH_TOKEN=${refreshToken}`} rows={5} style={{ width: "100%", margin: "1rem 0" }} />
         <button onClick={copy}>Copy refresh token</button><p role="status">{message}</p>
         <p>Keep this token private. It grants access to your Spotify playback data.</p>
-        <Link href="/api/now-playing">View your widget</Link>
+        <Link href="/">Open your listening dashboard</Link>
       </>}
     </main>
   );
