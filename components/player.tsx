@@ -61,12 +61,12 @@ const Player = ({ cover, track, artist, progress, duration, isPlaying, theme = "
         <div className="player-details">
           <div className="player-status"><span className="player-dot" />{status}</div>
           <p className="player-track" title={track}>{track || "Nothing playing"}</p>
-          <p className="player-artist" title={artist}>{artist || (track ? "Unknown artist" : "Play something on Spotify")}</p>
+          <p className="player-artist" title={artist}>{artist || (track ? "Unknown artist" : "No active listening session")}</p>
           {track && total > 0 && <>
             <div className="player-rail"><div className="player-progress" /></div>
             {!compact && <div className="player-times" aria-label="Playback time at image load"><span>{time(elapsed)}</span><span>{time(total)}</span></div>}
           </>}
-          {!track && !compact && <p className="player-idle">Your next favorite is one play away.</p>}
+          {!track && !compact && <p className="player-idle">Updates when playback resumes.</p>}
         </div>
       </div>
     </ReadmeImg>
